@@ -1,0 +1,80 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: iaInvestiments_user_db
+          POSTGRES_USER: user_db
+          POSTGRES_PASSWORD: 123456
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_USER: user_db
+      DB_PASS: 123456
+
+    steps:
+      - name: 📥 Checkout do código
+        uses: actions/checkout@v3
+
+      - name: ☕ Configurar JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: 🧪 Rodar testes com Maven
+        working-directory: ./microserviceUser
+        run: mvn test
+
+  deploy:
+    needs: build-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout do código
+        uses: actions/checkout@v3
+
+      - name: 🔐 Configurar credenciais da AWS
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+
+      - name: 🔐 Login no Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: 🐳 Build da imagem Docker
+        run: |
+          docker build -t microservice-user:latest ./microserviceUser
+          docker tag microservice-user:latest ${{ steps.ecr-login.outputs.registry }}/microservice-user:latest
+
+      - name: 📤 Push da imagem para o Amazon ECR
+        run: |
+          docker push ${{ steps.ecr-login.outputs.registry }}/microservice-user:latest
+
+      - name: 🚀 Atualizar serviço no ECS
+        run: |
+          aws ecs update-service \
+            --cluster cluster-ia-investiments \
+            --service microservice-user-service \
+            --force-new-deployment
