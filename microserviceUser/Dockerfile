@@ -1,14 +1,14 @@
-# Usa imagem base do Java 17
-FROM eclipse-temurin:17-jdk-alpine
+# Usa uma imagem base com Java
+FROM openjdk:17-jdk-slim
 
-# Diretório de trabalho dentro do container
+# Define o diretório de trabalho
 WORKDIR /app
 
-# Copia o .jar gerado pelo Maven
+# Copia o .jar que está no target/
 COPY target/*.jar app.jar
 
-# Expõe a porta (ajuste conforme seu app)
+# Expõe a porta usada pela aplicação
 EXPOSE 8080
 
-# Comando para iniciar o app
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Comando para rodar o app
+CMD ["java", "-jar", "app.jar"]
