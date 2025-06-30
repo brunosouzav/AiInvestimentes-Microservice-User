@@ -23,7 +23,7 @@ jobs:
 
       - name: Build da imagem Docker
         run: |
-          docker build -t microservice-user .
+          run: docker build -f microserviceUser/Dockerfile -t 122610500465.dkr.ecr.us-east-2.amazonaws.com/microservice-user ./microserviceUser
 
       - name: Tag Docker image
         run: |
