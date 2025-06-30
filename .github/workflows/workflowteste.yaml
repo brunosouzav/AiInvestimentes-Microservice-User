@@ -6,91 +6,29 @@ on:
       - main
 
 jobs:
-  build-test:
-    runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_DB: iaInvestiments_user_db
-          POSTGRES_USER: user_db
-          POSTGRES_PASSWORD: 123456
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-
-    env:
-      DB_HOST: localhost
-      DB_PORT: 5432
-      DB_USER: user_db
-      DB_PASS: 123456
-
-    steps:
-      - name: 📥 Checkout do código
-        uses: actions/checkout@v3
-
-      - name: ☕ Configurar JDK
-        uses: actions/setup-java@v3
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: 🧪 Rodar testes com Maven
-        working-directory: ./microserviceUser
-        run: mvn test
-
-      - name: 📦 Build do JAR com Maven
-        working-directory: ./microserviceUser
-        run: mvn clean package
-
-      - name: 📤 Upload artefato do JAR
-        uses: actions/upload-artifact@v4
-        with:
-          name: microservice-jar
-          path: microserviceUser/target/*.jar
-
   deploy:
-    needs: build-test
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout do código
+      - name: Checkout do código
         uses: actions/checkout@v3
 
-      - name: 📥 Download artefato do JAR
-        uses: actions/download-artifact@v4
-        with:
-          name: microservice-jar
-          path: microserviceUser/target/
-
-      - name: 🔐 Configurar credenciais da AWS
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-2
-
-      - name: 🔐 Login no Amazon ECR
-        id: ecr-login
-        uses: aws-actions/amazon-ecr-login@v1
-
-      - name: 🐳 Build da imagem Docker
+      - name: Login no Amazon ECR
         run: |
-          docker build -t microservice-user:latest ./microserviceUser
-          docker tag microservice-user:latest ${{ steps.ecr-login.outputs.registry }}/microservice-user:latest
+          aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 122610500465.dkr.ecr.us-east-2.amazonaws.com
 
-      - name: 📤 Push da imagem para o Amazon ECR
-        run: |
-          docker push ${{ steps.ecr-login.outputs.registry }}/microservice-user:latest
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - name: 🚀 Atualizar serviço no ECS
+      - name: Build da imagem Docker
         run: |
-          aws ecs update-service \
-            --cluster cluster-ia-investiments \
-            --service microservice-user-service \
-            --force-new-deployment
+          docker build -t microservice-user .
+
+      - name: Tag Docker image
+        run: |
+            docker tag microservice-user:latest 122610500465.dkr.ecr.us-east-2.amazonaws.com/microservice-user:latest
+
+      - name: Push Docker image to ECR
+        run: |
+            docker push 122610500465.dkr.ecr.us-east-2.amazonaws.com/microservice-user:latest

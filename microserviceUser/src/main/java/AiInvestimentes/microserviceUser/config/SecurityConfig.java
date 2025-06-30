@@ -46,6 +46,7 @@ public class SecurityConfig {
                         auth -> auth
                                 .requestMatchers("/api/auth/**").permitAll()
                                 .requestMatchers("/api/users").permitAll()
+                                .requestMatchers("/api/users").permitAll()
                                 .anyRequest().authenticated())
                 .oauth2Login(Customizer.withDefaults())
                 .oauth2ResourceServer(
