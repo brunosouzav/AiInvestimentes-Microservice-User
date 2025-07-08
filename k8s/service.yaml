@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: microservice-user-service
   annotations:
-    service.beta.kubernetes.io/aws-load-balancer-subnets: subnet-08faf4d600d843ff7,subnet-01b718057b6ebf8fc,subnet-0e75dae16c580f742
+    service.beta.kubernetes.io/aws-load-balancer-subnets: subnet-012f84750aa8e28d3,subnet-0beb77931365c5181
 spec:
   type: LoadBalancer
   selector:

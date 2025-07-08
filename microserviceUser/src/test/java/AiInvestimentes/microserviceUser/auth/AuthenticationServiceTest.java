@@ -22,6 +22,7 @@ import java.util.Optional;
 import static org.mockito.ArgumentMatchers.any;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 public class AuthenticationServiceTest {
@@ -55,24 +56,25 @@ public class AuthenticationServiceTest {
     void verificarProcessoDeLogin() {
         LoginDTO loginDTO = new LoginDTO("brunoteste@gmail.com", "123456");
 
-        // Simula a busca da interface e retorna o optional
-        when(userRepository.findByEmail(loginDTO.email()))
-                .thenReturn(Optional.of(new User()));
-
-        //Cria um obj de autenticação que o spring simularia quando o usuario for autenticado
+        // Mock da autenticação
         Authentication authenticationMock = mock(Authentication.class);
 
-        //Quando a autenticação for chamada com qualquer email devolva o mock de cima
+        // Configura o behavior dos mocks
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(authenticationMock);
 
-        //Simula o jwt
-        when(jwtService.generateToken(authenticationMock)).thenReturn("fake-jwt-token");
+        when(jwtService.generateToken(authenticationMock))
+                .thenReturn("fake-jwt-token");
 
-        // Chamo o metodo para gerar o token
+        // Executa o método
         String token = authenticationService.login(loginDTO);
 
+        // Valida o resultado
         assertEquals("fake-jwt-token", token);
+
+        // Verificações opcionais
+        verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
+        verify(jwtService).generateToken(authenticationMock);
     }
 
     @Test

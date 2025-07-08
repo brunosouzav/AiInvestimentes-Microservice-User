@@ -56,17 +56,13 @@ public class AuthenticationService {
 
     public String login(LoginDTO loginDTO) {
 
-        if (userRepository.findByEmail(loginDTO.email()).isEmpty()) {
-            throw new IllegalArgumentException("Email não encontrado");
-        }
-
         try {
 
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginDTO.email(), loginDTO.password())
             );
-            System.out.println("Authorities: " + authentication.getAuthorities());
             return jwtService.generateToken(authentication);
+
         } catch (AuthenticationException e) {
             throw new IllegalArgumentException("Senha incorreta");
         }
