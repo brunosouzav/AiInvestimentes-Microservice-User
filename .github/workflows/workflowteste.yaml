@@ -20,6 +20,16 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-2
 
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 122610500465.dkr.ecr.us-east-2.amazonaws.com
+
+      - name: Build, tag, and push Docker image
+        run: |
+          docker build -t microservice-user .
+          docker tag microservice-user:latest 122610500465.dkr.ecr.us-east-2.amazonaws.com/repository-teste:latest
+          docker push 122610500465.dkr.ecr.us-east-2.amazonaws.com/repository-teste:latest
+
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --region us-east-2 --name cluster-teste
 
